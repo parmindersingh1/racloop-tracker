@@ -1,13 +1,20 @@
 package com.websmithing.gpstracker;
 
+import android.Manifest;
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -25,7 +32,7 @@ import java.util.UUID;
 
 public class GpsTrackerActivity extends AppCompatActivity {
     private static final String TAG = "GpsTrackerActivity";
-
+    private static final int LOCATION_REQUEST_STATUS_CODE = 11;
     // use the websmithing defaultUploadWebsite for testing and then check your
     // location with your browser here: https://www.websmithing.com/gpstracker/displaymap.php
     private String defaultUploadWebsite;
@@ -42,6 +49,7 @@ public class GpsTrackerActivity extends AppCompatActivity {
     private PendingIntent pendingIntent;
 
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,6 +92,65 @@ public class GpsTrackerActivity extends AppCompatActivity {
                 trackLocation(view);
             }
         });
+
+//        ActivityCompat.requestPermissions(this, new String[]{
+//                Manifest.permission.ACCESS_FINE_LOCATION }, 1);
+        Log.d("Test", String.valueOf(Build.VERSION.SDK_INT) );
+        if (Build.VERSION.SDK_INT >= 23) {
+
+            if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    || checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+
+            } else {
+
+
+                ActivityCompat.requestPermissions(this, new String[] {
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION },
+                        LOCATION_REQUEST_STATUS_CODE);
+            }
+        }
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case LOCATION_REQUEST_STATUS_CODE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                    new AlertDialog.Builder(this)
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setTitle("Gps Location Required")
+                        .setMessage("Gps Permission is required")
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                finish();
+                            }
+
+                        })
+
+                        .show();
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request.
+        }
     }
 
     private void saveInterval() {
